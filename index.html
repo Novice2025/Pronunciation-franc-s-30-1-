@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Francês Fluido com Daby</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .active-tab { 
+            background-color: white; 
+            border-color: #3b82f6; 
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transform: scale(1.02);
+        }
+        /* Estilos para os exercícios */
+        .correct-answer { border-color: #10b981; background-color: #ecfdf5; } /* green-400, green-50 */
+        .incorrect-answer { border-color: #ef4444; background-color: #fef2f2; } /* red-500, red-50 */
+        .matching-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-bottom: 0.5rem;
+            cursor: grab;
+            background-color: #f8fafc; /* slate-50 */
+            transition: all 0.2s ease-in-out;
+        }
+        .matching-item:hover {
+            background-color: #f1f5f9; /* slate-100 */
+            transform: translateY(-2px);
+        }
+        .matching-target {
+            min-height: 3rem; /* Para ter altura mesmo vazio */
+            border: 2px dashed #94a3b8; /* slate-400 */
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background-color: #f8fafc; /* slate-50 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+            color: #64748b; /* slate-500 */
+        }
+        .matching-target.has-item {
+            border-style: solid;
+            border-color: #3b82f6; /* blue-500 */
+            background-color: #eff6ff; /* blue-50 */
+            color: #1e40af; /* blue-800 */
+            font-style: normal;
+        }
+        .matching-target.correct {
+            border-color: #10b981; /* green-500 */
+            background-color: #ecfdf5; /* green-50 */
+        }
+        .matching-target.incorrect {
+            border-color: #ef4444; /* red-500 */
+            background-color: #fef2f2; /* red-50 */
+        }
+        .matching-source-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .matching-source-item {
+            padding: 0.5rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            background-color: #fff;
+            cursor: grab;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: all 0.1s ease-in-out;
+        }
+        .matching-source-item:hover {
+            background-color: #f1f5f9;
+            transform: translateY(-1px);
+        }
+        .matching-source-item.dragging {
+            opacity: 0.7;
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-10 text-center space-y-2">
+            <div class="inline-flex items-center justify-center p-3 bg-blue-600 text-white rounded-2xl mb-4 shadow-lg shadow-blue-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>
+            </div>
+            <h1 class="text-4xl font-black tracking-tight text-slate-800">
+                Francês Fluido <span class="text-blue-600">com Daby</span>
+            </h1>
+            <p class="text-slate-500 max-w-lg mx-auto">
+                Domine as contrações e a pronúncia real que os franceses usam no dia a dia.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <nav id="tab-container" class="lg:col-span-4 space-y-2 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar"></nav>
+            <main class="lg:col-span-8">
+                <div class="bg-white rounded-3xl shadow-xl shadow-slate-200 border border-slate-100 p-8 min-h-[500px] flex flex-col relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 -z-0 opacity-50"></div>
+                    <div id="content-display" class="relative z-10 flex-1"></div>
+                    <div class="mt-12 flex justify-between gap-4 relative z-10">
+                        <button id="prev-btn" class="px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors disabled:opacity-30">Anterior</button>
+                        <button id="next-btn" class="px-6 py-3 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-900 transition-colors disabled:opacity-30">Próxima Expressão</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer class="mt-12 text-center text-slate-400 text-sm">
+            <p>Criado com dedicação por Daby • 2024</p>
+        </footer>
+    </div>
+
+    <script>
+        let activeTab = 0;
+
+        const phrasesData = [
+            { 
+                title: "Je ne sais pas", translation: "Eu não sei", 
+                writing: "Je ne sais pas", native: "J'sais pas", brazilian: "J'sê pá", 
+                explanation: "Na fala informal, o 'ne' da negação é quase totalmente omitido. O 'je' se contrai com o 'sais' (som de 'sê'), fazendo o som fluir rapidamente. É uma elisão e contração para agilizar a fala.",
+                exampleSentence: "J'sais pas où sont mes clés, j'ai cherché partout!", exampleTranslation: "Eu não sei onde estão minhas chaves, procurei por toda parte!",
+                exerciseSituation: "Você está em Paris e um amigo te pergunta onde fica a Torre Eiffel, mas você realmente não sabe.",
+                exerciseQuestionFr: "Como você responderia ao seu amigo em francês, de maneira informal?", exerciseQuestionPt: "Como você responderia ao seu amigo em francês, de forma informal?",
+                exerciseCorrectAnswer: ["J'sais pas", "Je ne sais pas"]
+            },
+            { 
+                title: "Tu es", translation: "Você é/está", 
+                writing: "Tu es", native: "T'es", brazilian: "Tê", 
+                explanation: "Na informalidade, o 'u' de 'tu' se contrai com o 'e' de 'es', formando um som único e mais fluido, como 'tê'. É uma elisão que torna a fala mais rápida e natural.",
+                exampleSentence: "T'es fatigué après le voyage? On peut se reposer.", exampleTranslation: "Você está cansado depois da viagem? A gente pode descansar.",
+                exerciseSituation: "Você encontra um amigo que parece muito feliz e quer perguntar o motivo.",
+                exerciseQuestionFr: "Como você perguntaria 'Você está feliz?' de forma informal?", exerciseQuestionPt: "Como você perguntaria 'Você está feliz?' de forma informal?",
+                exerciseCorrectAnswer: ["T'es content?", "Tu es content?"]
+            },
+            { 
+                title: "Il y a", translation: "Há / Tem", 
+                writing: "Il y a", native: "Y'a", brazilian: "Iá ou Yá", 
+                explanation: "Esta é uma das contrações mais fundamentais do francês falado. O 'il' é quase completamente omitido, e o 'y' e o 'a' se juntam para formar um som rápido e fluido. É uma elisão e simplificação fonética.",
+                exampleSentence: "Y'a un problème avec ma voiture, elle ne démarre pas.", exampleTranslation: "Tem um problema com meu carro, ele não liga.",
+                exerciseSituation: "Você está procurando por um café na rua e quer perguntar se há um por perto.",
+                exerciseQuestionFr: "Como você perguntaria 'Tem um café por aqui?' de forma informal?", exerciseQuestionPt: "Como você perguntaria 'Tem um café por aqui?' de forma informal?",
+                exerciseCorrectAnswer: ["Y'a un café par ici?", "Il y a un café par ici?"]
+            },
+            { 
+                title: "C'est un ami", translation: "É um amigo", 
+                writing: "C'est un ami", native: "Cè-t-un-n-ami", brazilian: "Sê-tã-nami", 
+                explanation: "Aqui ocorre a 'Liaison' (ligação): o 't' final de 'c'est' (normalmente mudo) é pronunciado como 't' e se liga ao 'u' de 'un'. Em seguida, o 'n' de 'un' (que é um som nasal) se liga ao 'a' de 'ami', criando um fluxo sonoro contínuo. É essencial para a fluidez.",
+                exampleSentence: "Ne t'inquiète pas, c'est un ami, il est très gentil.", exampleTranslation: "Não se preocupe, é um amigo, ele é muito gentil.",
+                exerciseSituation: "Você está apresentando um novo colega a alguém e quer dizer que ele é um amigo.",
+                exerciseQuestionFr: "Como você diria 'É um amigo'?", exerciseQuestionPt: "Como você diria 'É um amigo'?",
+                exerciseCorrectAnswer: ["C'est un ami"]
+            },
+            { 
+                title: "Nous allons", translation: "Nós vamos (Formal)", 
+                writing: "Nous allons", native: "Nou-z-allons", brazilian: "Nu-zalõ", 
+                explanation: "Esta é uma 'Liaison' obrigatória em contextos formais. O 's' final de 'nous' (que é mudo isoladamente) ganha som de 'z' e se liga à vogal inicial de 'allons'. O som flui como 'nou-z-allons'.",
+                exampleSentence: "Nous allons au restaurant ce soir, avez-vous réservé?", exampleTranslation: "Nós vamos ao restaurante esta noite, vocês reservaram?",
+                exerciseSituation: "Você e seus colegas de trabalho decidiram ir ao cinema e você está informando seu chefe.",
+                exerciseQuestionFr: "Como você diria 'Nós vamos ao cinema' de forma formal?", exerciseQuestionPt: "Como você diria 'Nós vamos ao cinema' de forma formal?",
+                exerciseCorrectAnswer: ["Nous allons au cinéma"]
+            },
+            { 
+                title: "On va", translation: "A gente vai / Nós vamos (Informal)", 
+                writing: "On va", native: "On va", brazilian: "Õ vá", 
+                explanation: "'On' é a forma padrão para expressar 'nós' no cotidiano e em contextos informais. É mais simples e não exige ligações complexas aqui, mantendo o som nasal de 'on' seguido de 'va'.",
+                exampleSentence: "On va manger une pizza, tu viens avec nous?", exampleTranslation: "A gente vai comer uma pizza, você vem com a gente?",
+                exerciseSituation: "Você e seus amigos decidiram ir à praia no fim de semana.",
+                exerciseQuestionFr: "Como você diria 'A gente vai à praia' de forma informal?", exerciseQuestionPt: "Como você diria 'A gente vai à praia' de forma informal?",
+                exerciseCorrectAnswer: ["On va à la plage"]
+            },
+            { 
+                title: "Qu'est-ce que c'est ?", translation: "O que é isso? (Informal)", 
+                writing: "Qu'est-ce que c'est ?", native: "Kès-k'sé ?", brazilian: "Kés-kê-sê?", 
+                explanation: "Na fala rápida e informal, o 'e' final de 'que' desaparece (elisão) antes da vogal 'est'. O 'ce' também se elide. Na velocidade normal, soa como uma única palavra curta e fluida, 'kès-k'sé'.",
+                exampleSentence: "Kès-k'sé ça? C'est bizarre!", exampleTranslation: "O que é isso? É estranho!",
+                exerciseSituation: "Você vê um objeto estranho e quer perguntar o que é para um amigo.",
+                exerciseQuestionFr: "Como você perguntaria 'O que é isso?' de forma informal?", exerciseQuestionPt: "Como você perguntaria 'O que é isso?' de forma informal?",
+                exerciseCorrectAnswer: ["Kès-k'sé ça?", "Qu'est-ce que c'est ça?"]
+            },
+            { 
+                title: "Beaucoup de monde", translation: "Muita gente", 
+                writing: "Beaucoup de monde", native: "Bocou d'monde", brazilian: "Bocu d'mõd", 
+                explanation: "O 'e' mudo de 'de' é frequentemente 'engolido' ou muito suavizado (queda do 'e' caduc) antes de uma consoante, conectando o som de 'beaucoup' direto ao 'm' de 'monde'. Isso cria um fluxo mais rápido e natural.",
+                exampleSentence: "Il y avait beaucoup de monde à la fête hier soir.", exampleTranslation: "Havia muita gente na festa ontem à noite.",
+                exerciseSituation: "Você está em um show e o local está lotado.",
+                exerciseQuestionFr: "Como você diria 'Tem muita gente aqui!'?", exerciseQuestionPt: "Como você diria 'Tem muita gente aqui!'?",
+                exerciseCorrectAnswer: ["Y'a beaucoup de monde ici!", "Il y a beaucoup de monde ici!"]
+            },
+            { 
+                title: "Il est", translation: "Ele é / está", 
+                writing: "Il est", native: "Il-l-est", brazilian: "Ilê", 
+                explanation: "Na fala, o 'l' final de 'il' não é apenas pronunciado, mas estendido para se fundir com a vogal do verbo 'est'. Isso cria uma ligação sonora que faz o som fluir, como 'ilê'.",
+                exampleSentence: "Il est très intelligent, il comprend vite.", exampleTranslation: "Ele é muito inteligente, ele entende rápido.",
+                exerciseSituation: "Você está descrevendo seu irmão e quer dizer que ele é alto.",
+                exerciseQuestionFr: "Como você diria 'Ele é alto'?", exerciseQuestionPt: "Como você diria 'Ele é alto'?",
+                exerciseCorrectAnswer: ["Il est grand"]
+            },
+            { 
+                title: "Ils ont", translation: "Eles têm", 
+                writing: "Ils ont", native: "Il-z-on", brazilian: "Il-zõ", 
+                explanation: "Esta é uma 'Liaison' obrigatória. O 's' final de 'ils' (mudo isoladamente) é pronunciado como 'z' e se liga à vogal 'o' de 'ont'. É crucial para diferenciar 'Ils ont' (Eles têm) de 'Ils sont' (Eles são), que teria um 't' na ligação.",
+                exampleSentence: "Ils ont deux enfants et un chien.", exampleTranslation: "Eles têm dois filhos e um cachorro.",
+                exerciseSituation: "Você está falando sobre seus vizinhos e quer dizer que eles têm um cachorro.",
+                exerciseQuestionFr: "Como você diria 'Eles têm um cachorro'?", exerciseQuestionPt: "Como você diria 'Eles têm um cachorro'?",
+                exerciseCorrectAnswer: ["Ils ont un chien"]
+            },
+            { 
+                title: "Je ne veux pas", translation: "Eu não quero (Informal)", 
+                writing: "Je ne veux pas", native: "J'veux pas", brazilian: "J'vê pá", 
+                explanation: "Assim como em 'Je ne sais pas', a partícula negativa 'ne' desaparece totalmente no francês das ruas. O 'je' se contrai com 'veux', tornando a frase mais curta e fluida. É uma elisão comum na fala informal.",
+                exampleSentence: "J'veux pas y aller, je suis trop fatigué.", exampleTranslation: "Eu não quero ir lá, estou muito cansado.",
+                exerciseSituation: "Seu amigo te convida para uma festa, mas você não quer ir.",
+                exerciseQuestionFr: "Como você recusaria o convite, dizendo 'Eu não quero' de forma informal?", exerciseQuestionPt: "Como você recusaria o convite, dizendo 'Eu não quero' de forma informal?",
+                exerciseCorrectAnswer: ["J'veux pas", "Je ne veux pas"]
+            },
+            { 
+                title: "C'est", translation: "Isto é / É", 
+                writing: "C'est", native: "C'est", brazilian: "Sê", 
+                explanation: "Resulta da elisão de 'ce' + 'est'. É a forma onipresente de apontar ou definir algo em francês. O som é curto e direto, como 'sê'.",
+                exampleSentence: "C'est magnifique! Regarde le paysage.", exampleTranslation: "Isto é magnífico! Olhe a paisagem.",
+                exerciseSituation: "Você vê uma paisagem linda e quer expressar sua admiração.",
+                exerciseQuestionFr: "Como você diria 'Isto é lindo!'?", exerciseQuestionPt: "Como você diria 'Isto é lindo!'?",
+                exerciseCorrectAnswer: ["C'est beau!", "C'est magnifique!"]
+            },
+            { 
+                title: "Qu'est-ce que tu fais ?", translation: "O que você está fazendo? (Informal)", 
+                writing: "Qu'est-ce que tu fais ?", native: "Kès-tu fais ?", brazilian: "Kés-tü fê?", 
+                explanation: "Na fala informal, os franceses encurtam a pergunta removendo o segundo 'que'. A pronúncia se torna mais compacta e fluida, como 'kès-tu fais'.",
+                exampleSentence: "Kès-tu fais ce soir? On pourrait sortir.", exampleTranslation: "O que você está fazendo esta noite? A gente poderia sair.",
+                exerciseSituation: "Você liga para um amigo e quer saber o que ele está fazendo no momento.",
+                exerciseQuestionFr: "Como você perguntaria 'O que você está fazendo?' de forma informal?", exerciseQuestionPt: "Como você perguntaria 'O que você está fazendo?' de forma informal?",
+                exerciseCorrectAnswer: ["Kès-tu fais?", "Qu'est-ce que tu fais?"]
+            },
+            { 
+                title: "Nous avons", translation: "Nós temos (Formal)", 
+                writing: "Nous avons", native: "Nou-z-avons", brazilian: "Nu-zavõ", 
+                explanation: "Ligação clássica e obrigatória em contextos formais: o 's' de 'nous' encontra o 'a' de 'avons', criando o som de 'Z'. O som flui como 'nou-z-avõ'.",
+                exampleSentence: "Nous avons une réunion importante à préparer.", exampleTranslation: "Nós temos uma reunião importante para preparar.",
+                exerciseSituation: "Você e sua equipe têm um prazo apertado para um projeto.",
+                exerciseQuestionFr: "Como você diria 'Nós temos muito trabalho' de forma formal?", exerciseQuestionPt: "Como você diria 'Nós temos muito trabalho' de forma formal?",
+                exerciseCorrectAnswer: ["Nous avons beaucoup de travail"]
+            },
+            { 
+                title: "On a", translation: "A gente tem (Informal)", 
+                writing: "On a", native: "On-n-a", brazilian: "Õná", 
+                explanation: "Na fala informal, o 'n' final de 'on' (que faz parte do som nasal) é pronunciado e se liga ao 'a' seguinte. Diferente do 's', a ligação do 'n' mantém o som nasal seguido da consoante 'n', criando um fluxo como 'õ-ná'.",
+                exampleSentence: "On a faim! On va manger bientôt?", exampleTranslation: "A gente está com fome! A gente vai comer em breve?",
+                exerciseSituation: "Você e seus amigos estão com sede depois de uma caminhada.",
+                exerciseQuestionFr: "Como você diria 'A gente está com sede!' de forma informal?", exerciseQuestionPt: "Como você diria 'A gente está com sede!' de forma informal?",
+                exerciseCorrectAnswer: ["On a soif!"]
+            },
+            { 
+                title: "Pas de problème", translation: "Sem problema", 
+                writing: "Pas de problème", native: "Pa d'problème", brazilian: "Pá d'problêm", 
+                explanation: "O 'e' mudo de 'de' é frequentemente 'engolido' ou muito suavizado (queda do 'e' caduc) na fala rápida, conectando 'pas' diretamente a 'problème'. O som flui como 'pá d'problêm'.",
+                exampleSentence: "Pas de problème, je peux t'aider avec ça.", exampleTranslation: "Sem problema, eu posso te ajudar com isso.",
+                exerciseSituation: "Um amigo pede sua ajuda com algo simples e você quer dizer que não há problema.",
+                exerciseQuestionFr: "Como você diria 'Sem problema'?", exerciseQuestionPt: "Como você diria 'Sem problema'?",
+                exerciseCorrectAnswer: ["Pas de problème"]
+            },
+            { 
+                title: "L'ami", translation: "O amigo", 
+                writing: "L'ami", native: "L'ami", brazilian: "Lami", 
+                explanation: "Esta é uma 'elisão' obrigatória. O artigo 'Le' vira 'L'' antes de uma palavra que começa com vogal (como 'ami') para evitar o choque de sons 'Le ami'. Isso faz o som fluir como 'lami'.",
+                exampleSentence: "L'ami de mon frère est très sympa.", exampleTranslation: "O amigo do meu irmão é muito legal.",
+                exerciseSituation: "Você está falando sobre um amigo em comum.",
+                exerciseQuestionFr: "Como você diria 'O amigo está aqui'?", exerciseQuestionPt: "Como você diria 'O amigo está aqui'?",
+                exerciseCorrectAnswer: ["L'ami est ici"]
+            },
+            { 
+                title: "Tu fais", translation: "Você faz (Informal)", 
+                writing: "Tu fais", native: "Tu f'sais", brazilian: "Tü f'sê", 
+                explanation: "Na fala informal, ocorre uma redução silábica: a vogal interna de 'fais' é quase omitida para ganhar velocidade e fluidez. O som se torna mais compacto, como 'tü f'sê'.",
+                exampleSentence: "Tu fais quoi ce week-end? On pourrait se voir.", exampleTranslation: "Você faz o que neste fim de semana? A gente poderia se ver.",
+                exerciseSituation: "Você quer saber o que seu amigo vai fazer no fim de semana.",
+                exerciseQuestionFr: "Como você perguntaria 'Você faz o que?' de forma informal?", exerciseQuestionPt: "Como você perguntaria 'Você faz o que?' de forma informal?",
+                exerciseCorrectAnswer: ["Tu fais quoi?"]
+            },
+            { 
+                title: "Il est en retard", translation: "Ele está atrasado", 
+                writing: "Il est en retard", native: "Il è t-en retard", brazilian: "Ilê tã retár", 
+                explanation: "Aqui, o 't' final de 'est' (geralmente mudo) é pronunciado obrigatoriamente para fazer a 'Liaison' com 'en'. O som flui como 'ilê tã retár', conectando as palavras de forma natural.",
+                exampleSentence: "Désolé, il est en retard pour la réunion.", exampleTranslation: "Desculpe, ele está atrasado para a reunião.",
+                exerciseSituation: "Seu colega de trabalho ainda não chegou para a reunião.",
+                exerciseQuestionFr: "Como você diria 'Ele está atrasado para a reunião'?", exerciseQuestionPt: "Como você diria 'Ele está atrasado para a reunião'?",
+                exerciseCorrectAnswer: ["Il est en retard pour la réunion"]
+            },
+            // Novas frases adicionadas e revisadas
+            { 
+                title: "Les amis", translation: "Os amigos", 
+                writing: "Les amis", native: "Lè-z-ami", brazilian: "Lê-zami", 
+                explanation: "Esta é uma 'Liaison' obrigatória. O 's' final de 'les' (mudo isoladamente) é pronunciado como 'z' e se liga ao 'a' de 'amis'. O som flui como 'lê-zami', conectando as palavras.",
+                exampleSentence: "Les amis sont toujours là pour nous aider.", exampleTranslation: "Os amigos estão sempre lá para nos ajudar.",
+                exerciseSituation: "Você está falando sobre um grupo de amigos que vai viajar no próximo mês.",
+                exerciseQuestionFr: "Como você diria 'Os amigos vão viajar no próximo mês'?", exerciseQuestionPt: "Como você diria 'Os amigos vão viajar no próximo mês'?",
+                exerciseCorrectAnswer: ["Les amis vont voyager le mois prochain"]
+            },
+            { 
+                title: "Nous avons", translation: "Nós temos (Formal)", 
+                writing: "Nous avons", native: "Nou-z-avons", brazilian: "Nu-zavõ", 
+                explanation: "Ligação clássica e obrigatória em contextos formais: o 's' de 'nous' encontra o 'a' de 'avons', criando o som de 'Z'. O som flui como 'nu-zavõ'.",
+                exampleSentence: "Nous avons un rendez-vous important à 10h.", exampleTranslation: "Nós temos um compromisso importante às 10h.",
+                exerciseSituation: "Você e seu parceiro de negócios têm um novo projeto para começar na próxima semana.",
+                exerciseQuestionFr: "Como você diria 'Nós temos um novo projeto para a próxima semana' de forma formal?", exerciseQuestionPt: "Como você diria 'Nós temos um novo projeto para a próxima semana' de forma formal?",
+                exerciseCorrectAnswer: ["Nous avons un nouveau projet pour la semaine prochaine"]
+            },
+            { 
+                title: "On a", translation: "A gente tem (Informal)", 
+                writing: "On a", native: "On-n-a", brazilian: "Õná", 
+                explanation: "Na fala informal, o 'n' final de 'on' (parte do som nasal) é pronunciado e se liga ao 'a' seguinte. Isso cria um fluxo sonoro contínuo, como 'õ-ná'.",
+                exampleSentence: "On a de la chance! On a trouvé un billet de loterie.", exampleTranslation: "A gente tem sorte! A gente achou um bilhete de loteria.",
+                exerciseSituation: "Você e seus amigos acabaram de ganhar um prêmio inesperado.",
+                exerciseQuestionFr: "Como você diria 'A gente tem sorte!' de forma informal?", exerciseQuestionPt: "Como você diria 'A gente tem sorte!' de forma informal?",
+                exerciseCorrectAnswer: ["On a de la chance!"]
+            },
+            { 
+                title: "Vous êtes", translation: "Vocês são/estão (Formal)", 
+                writing: "Vous êtes", native: "Vou-z-èt", brazilian: "Vu-zét", 
+                explanation: "Esta é uma 'Liaison' obrigatória em contextos formais. O 's' final de 'vous' (mudo isoladamente) é pronunciado como 'z' e se liga ao 'ê' de 'êtes'. O som flui como 'vu-zét'.",
+                exampleSentence: "Mesdames et Messieurs, vous êtes très gentils d'être venus.", exampleTranslation: "Senhoras e Senhores, vocês são muito gentis por terem vindo.",
+                exerciseSituation: "Você está agradecendo a um grupo de pessoas por sua ajuda em um evento formal.",
+                exerciseQuestionFr: "Como você diria 'Vocês são muito úteis' de forma formal?", exerciseQuestionPt: "Como você diria 'Vocês são muito úteis' de forma formal?",
+                exerciseCorrectAnswer: ["Vous êtes très utiles"]
+            },
+            { 
+                title: "On est", translation: "A gente é/está (Informal)", 
+                writing: "On est", native: "On-n-è", brazilian: "Õ-nê", 
+                explanation: "Na fala informal, o 'n' final de 'on' (parte do som nasal) é pronunciado e se liga ao 'e' de 'est'. Isso cria um fluxo sonoro contínuo, como 'õ-nê'.",
+                exampleSentence: "On est prêts pour la fête! La musique est déjà forte.", exampleTranslation: "A gente está pronto para a festa! A música já está alta.",
+                exerciseSituation: "Você e seus amigos estão prontos para sair para uma festa.",
+                exerciseQuestionFr: "Como você diria 'A gente está pronto!' de forma informal?", exerciseQuestionPt: "Como você diria 'A gente está pronto!' de forma informal?",
+                exerciseCorrectAnswer: ["On est prêts!", "On est prêt!"]
+            },
+            { 
+                title: "Elles aiment", translation: "Elas amam", 
+                writing: "Elles aiment", native: "El-z-èm", brazilian: "El-zém", 
+                explanation: "Esta é uma 'Liaison' obrigatória. O 's' final de 'elles' (mudo isoladamente) é pronunciado como 'z' e se liga ao 'ai' de 'aiment'. O som flui como 'el-zém'.",
+                exampleSentence: "Elles aiment la musique classique et le jazz.", exampleTranslation: "Elas amam música clássica e jazz.",
+                exerciseSituation: "Você está falando sobre duas amigas que adoram música.",
+                exerciseQuestionFr: "Como você diria 'Elas amam música'?", exerciseQuestionPt: "Como você diria 'Elas amam música'?",
+                exerciseCorrectAnswer: ["Elles aiment la musique"]
+            },
+            { 
+                title: "Un enfant", translation: "Uma criança", 
+                writing: "Un enfant", native: "Un-n-enfant", brazilian: "An-nãfã", 
+                explanation: "Aqui, o 'n' final de 'un' (parte do som nasal) é pronunciado e se liga ao 'e' de 'enfant'. Isso cria um fluxo sonoro contínuo, como 'an-nãfã'.",
+                exampleSentence: "Un enfant joue dans le parc.", exampleTranslation: "Uma criança brinca no parque.",
+                exerciseSituation: "Você vê uma criança feliz brincando no jardim.",
+                exerciseQuestionFr: "Como você diria 'Uma criança está feliz'?", exerciseQuestionPt: "Como você diria 'Uma criança está feliz'?",
+                exerciseCorrectAnswer: ["Un enfant est heureux"]
+            },
+            { 
+                title: "Bon appétit !", translation: "Bom apetite!", 
+                writing: "Bon appétit !", native: "Bon-n-appétit !", brazilian: "Bõ-n-apetí!", 
+                explanation: "Esta é uma 'Liaison' obrigatória. O 'n' final de 'bon' (parte do som nasal) é pronunciado e se liga ao 'a' de 'appétit'. O som flui como 'bõ-n-apetí'.",
+                exampleSentence: "Le dîner est servi, bon appétit à tous!", exampleTranslation: "O jantar está servido, bom apetite a todos!",
+                exerciseSituation: "Você está servindo o jantar para seus convidados.",
+                exerciseQuestionFr: "Como você diria 'Bom apetite!'?", exerciseQuestionPt: "Como você diria 'Bom apetite!'?",
+                exerciseCorrectAnswer: ["Bon appétit!"]
+            },
+            { 
+                title: "Un homme intéressant", translation: "Um homem interessante", 
+                writing: "Un homme intéressant", native: "Un-n-homme intéressant", brazilian: "An-nõm-interessã", 
+                explanation: "O 'n' final de 'un' (parte do som nasal) é pronunciado e se liga ao 'h' mudo de 'homme'. Em seguida, o 'm' de 'homme' se liga ao 'i' de 'intéressant'. Isso cria um fluxo sonoro contínuo, como 'an-nõm-interessã'.",
+                exampleSentence: "C'est un homme intéressant, j'aime discuter avec lui.", exampleTranslation: "É um homem interessante, gosto de conversar com ele.",
+                exerciseSituation: "Você está descrevendo uma pessoa que você acabou de conhecer e achou muito interessante.",
+                exerciseQuestionFr: "Como você diria 'É um homem interessante'?", exerciseQuestionPt: "Como você diria 'É um homem interessante'?",
+                exerciseCorrectAnswer: ["C'est un homme intéressant"]
+            },
+            { 
+                title: "Mon petit ami", translation: "Meu namorado", 
+                writing: "Mon petit ami", native: "Mon p'tit ami", brazilian: "Mõ p'tit ami", 
+                explanation: "Na fala informal, o 'e' de 'petit' é frequentemente omitido (queda do 'e' caduc) para agilizar a pronúncia. O 'n' de 'mon' (som nasal) se liga ao 'a' de 'ami'.",
+                exampleSentence: "Mon petit ami m'a offert des fleurs pour mon anniversaire.", exampleTranslation: "Meu namorado me deu flores de aniversário.",
+                exerciseSituation: "Você está contando para uma amiga que seu namorado te deu um presente.",
+                exerciseQuestionFr: "Como você diria 'Meu namorado me deu um presente'?", exerciseQuestionPt: "Como você diria 'Meu namorado me deu um presente'?",
+                exerciseCorrectAnswer: ["Mon petit ami m'a donné un cadeau", "Mon petit ami m'a offert un cadeau"]
+            },
+            { 
+                title: "Très intéressant", translation: "Muito interessante", 
+                writing: "Très intéressant", native: "Trè-z-intéressant", brazilian: "Trê-zinteressã", 
+                explanation: "Esta é uma 'Liaison' obrigatória. O 's' final de 'très' (mudo isoladamente) é pronunciado como 'z' e se liga ao 'i' de 'intéressant'. O som flui como 'trê-zinteressã'.",
+                exampleSentence: "Ce livre est très intéressant, je l'ai lu en une journée.", exampleTranslation: "Este livro é muito interessante, eu o li em um dia.",
+                exerciseSituation: "Você está recomendando um livro que achou fascinante.",
+                exerciseQuestionFr: "Como você diria 'Este livro é muito interessante'?", exerciseQuestionPt: "Como você diria 'Este livro é muito interessante'?",
+                exerciseCorrectAnswer: ["Ce livre est très intéressant"]
+            },
+            { 
+                title: "Deux heures", translation: "Duas horas", 
+                writing: "Deux heures", native: "Deu-z-eur", brazilian: "Dê-zêr", 
+                explanation: "Esta é uma 'Liaison' obrigatória. O 'x' final de 'deux' (mudo isoladamente) é pronunciado como 'z' e se liga ao 'h' mudo de 'heures'. O som flui como 'dê-zêr'.",
+                exampleSentence: "J'ai attendu deux heures pour le bus.", exampleTranslation: "Eu esperei duas horas pelo ônibus.",
+                exerciseSituation: "Você está reclamando que esperou muito tempo por algo.",
+                exerciseQuestionFr: "Como você diria 'Eu esperei duas horas'?", exerciseQuestionPt: "Como você diria 'Eu esperei duas horas'?",
+                exerciseCorrectAnswer: ["J'ai attendu deux heures"]
+            },
+            { 
+                title: "Beaucoup d'argent", translation: "Muito dinheiro", 
+                writing: "Beaucoup d'argent", native: "Bocou d'arjan", brazilian: "Bocu darjã", 
+                explanation: "O 'e' de 'de' é elidido (substituído por apóstrofo) antes de 'argent' (que começa com vogal). O 'p' de 'beaucoup' é mudo. O som flui como 'bocu darjã'.",
+                exampleSentence: "Il a beaucoup d'argent, il peut acheter ce qu'il veut.", exampleTranslation: "Ele tem muito dinheiro, ele pode comprar o que quiser.",
+                exerciseSituation: "Você está falando sobre alguém que é muito rico.",
+                exerciseQuestionFr: "Como você diria 'Ele tem muito dinheiro'?", exerciseQuestionPt: "Como você diria 'Ele tem muito dinheiro'?",
+                exerciseCorrectAnswer: ["Il a beaucoup d'argent"]
+            },
+            { 
+                title: "Quand est-ce que...?", translation: "Quando é que...?", 
+                writing: "Quand est-ce que...?", native: "Quan-t-ès-k'...?", brazilian: "Cã-tés-kê…?", 
+                explanation: "Esta é uma 'Liaison' obrigatória. O 'd' final de 'quand' (mudo isoladamente) é pronunciado como 't' e se liga ao 'e' de 'est'. O 'e' de 'que' é elidido antes de 'est'. O som flui como 'cã-tés-kê'.",
+                exampleSentence: "Quand est-ce que tu viens me voir?", exampleTranslation: "Quando é que você vem me ver?",
+                exerciseSituation: "Você quer saber quando um amigo vai te visitar.",
+                exerciseQuestionFr: "Como você perguntaria 'Quando é que você vem?'?", exerciseQuestionPt: "Como você perguntaria 'Quando é que você vem?'?",
+                exerciseCorrectAnswer: ["Quand est-ce que tu viens?"]
+            },
+            // Aba final de exercícios
+            { 
+                title: "Exercícios Finais", translation: "Exercícios Finais", isExerciseTab: true 
+            }
+        ];
+
+        function renderTabs() {
+            const container = document.getElementById('tab-container');
+            if (!container) return;
+
+            let tabsHtml = "";
+            phrasesData.forEach((phrase, index) => {
+                const isActive = activeTab === index;
+                const activeClass = isActive ? 'active-tab border-blue-500' : 'bg-transparent border-transparent hover:bg-slate-200 text-slate-600';
+                const textClass = isActive ? 'text-blue-700' : '';
+
+                tabsHtml += `
+                    <button onclick="selectTab(${index})" class="tab-btn w-full text-left p-4 rounded-xl transition-all duration-200 flex items-center justify-between border-2 ${activeClass}">
+                        <div class="flex flex-col">
+                            <span class="font-bold ${textClass}">${phrase.title}</span>
+                            <span class="text-xs opacity-70 italic">${phrase.translation}</span>
+                        </div>
+                    </button>
+                `;
+            });
+            container.innerHTML = tabsHtml;
+        }
+
+        function renderContent() {
+            const display = document.getElementById('content-display');
+            if (!display) return;
+
+            const phrase = phrasesData[activeTab];
+
+            // Esconde botões de navegação se for a aba de exercícios finais
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            if (phrase.isExerciseTab) {
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                display.innerHTML = `
+                    <h2 class="text-3xl font-bold text-slate-800 mb-8">Exercícios Finais</h2>
+                    <p class="text-slate-600 mb-8">Teste seus conhecimentos com os exercícios de correspondência e tradução!</p>
+                    <div class="space-y-12">
+                        ${renderMatchingExercise()}
+                        ${renderTranslationExercise()}
+                    </div>
+                `;
+                initializeMatchingExercise(); // Inicializa o exercício de correspondência
+                initializeTranslationExercise(); // Inicializa o exercício de tradução
+            } else {
+                prevBtn.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+                display.innerHTML = `
+                    <div class="flex items-center justify-between mb-8">
+                        <div class="space-y-1">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-wider">
+                                Expressão ${activeTab + 1} de ${phrasesData.length - 1}
+                            </span>
+                            <h2 class="text-3xl font-bold text-slate-800">${phrase.title}</h2>
+                            <p class="text-xl text-slate-500 italic">${phrase.translation}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-10">
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                            <div class="flex items-center gap-2 text-blue-600 mb-3 font-semibold">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                                <span>Escrita Padrão</span>
+                            </div>
+                            <div class="text-2xl font-mono font-bold text-slate-800 mb-1">"${phrase.writing}"</div>
+                        </div>
+
+                        <div class="bg-orange-50 p-6 rounded-2xl border border-orange-100">
+                            <div class="flex items-center gap-2 text-orange-600 mb-3 font-semibold">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                                <span>Pronúncia Real (Informal)</span>
+                            </div>
+                            <div class="text-2xl font-mono font-bold text-slate-800 mb-1">"${phrase.native}"</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-purple-50/50 border border-purple-100 p-6 rounded-2xl mb-10">
+                        <div class="flex items-start gap-4">
+                            <div class="p-2 bg-purple-100 rounded-lg text-purple-600 mt-1">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10M7 16h10M9 4h6a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-purple-900 mb-2">Como o Brasileiro Pode Aprender</h4>
+                                <p class="text-purple-800 leading-relaxed font-mono font-bold text-xl">"${phrase.brazilian}"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50/50 border border-blue-100 p-6 rounded-2xl mb-10">
+                        <div class="flex items-start gap-4">
+                            <div class="p-2 bg-blue-100 rounded-lg text-blue-600 mt-1">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-blue-900 mb-2">Detalhes da Pronúncia e Fluxo do Som</h4>
+                                <p class="text-blue-800 leading-relaxed">${phrase.explanation}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${phrase.exampleSentence ? `
+                        <div class="bg-gray-50/50 border border-gray-100 p-6 rounded-2xl mb-10">
+                            <div class="flex items-start gap-4">
+                                <div class="p-2 bg-gray-100 rounded-lg text-gray-600 mt-1">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10M7 16h10M9 4h6a2 2 0 012 2v12a2 2 0 01-2 2H9a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-gray-900 mb-2">Exemplo em Contexto Real</h4>
+                                    <p class="text-gray-800 leading-relaxed">
+                                        <span class="font-semibold">${phrase.exampleSentence}</span> <br>
+                                        <span class="italic text-sm">${phrase.exampleTranslation}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${phrase.exerciseSituation ? `
+                        <div class="bg-green-50/50 border border-green-100 p-6 rounded-2xl mb-10">
+                            <h4 class="font-bold text-green-900 mb-4">Exercício: Pratique a Expressão</h4>
+                            <p class="text-green-800 mb-4">
+                                <span class="font-semibold">Situação:</span> ${phrase.exerciseSituation}
+                            </p>
+                            <p class="text-green-800 mb-4">
+                                <span class="font-semibold">Pergunta em Francês:</span> ${phrase.exerciseQuestionFr} <br>
+                                <span class="italic text-sm">(${phrase.exerciseQuestionPt})</span>
+                            </p>
+                            <input type="text" id="exercise-input" class="w-full p-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 mb-4 text-slate-800" placeholder="Sua resposta em francês...">
+                            <button onclick="checkExerciseAnswer(${activeTab})" class="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Verificar Resposta</button>
+                            <div id="exercise-feedback" class="mt-4 p-3 rounded-lg border-2 hidden"></div>
+                        </div>
+                    ` : ''}
+                `;
+                document.getElementById('prev-btn').disabled = activeTab === 0;
+                document.getElementById('next-btn').disabled = activeTab === phrasesData.length - 1;
+            }
+        }
+
+        function selectTab(index) {
+            activeTab = index;
+            renderTabs();
+            renderContent();
+            const activeTabElement = document.querySelector('.tab-btn.active-tab');
+            if (activeTabElement) {
+                activeTabElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        document.getElementById('prev-btn').onclick = () => { if (activeTab > 0) selectTab(activeTab - 1); };
+        document.getElementById('next-btn').onclick = () => { if (activeTab < phrasesData.length - 1) selectTab(activeTab + 1); };
+
+        // Função para verificar a resposta do exercício individual
+        function checkExerciseAnswer(tabIndex) {
+            const phrase = phrasesData[tabIndex];
+            const inputElement = document.getElementById('exercise-input');
+            const feedbackElement = document.getElementById('exercise-feedback');
+
+            if (!inputElement || !feedbackElement) return;
+
+            const userAnswer = inputElement.value.trim().toLowerCase();
+            const correctAnswers = phrase.exerciseCorrectAnswer.map(ans => ans.toLowerCase());
+
+            feedbackElement.classList.remove('hidden', 'correct-answer', 'incorrect-answer');
+            inputElement.classList.remove('correct-answer', 'incorrect-answer');
+
+            if (correctAnswers.includes(userAnswer)) {
+                feedbackElement.classList.add('correct-answer');
+                inputElement.classList.add('correct-answer');
+                feedbackElement.innerHTML = '<span class="font-bold text-green-800">Correto!</span> Muito bem!';
+            } else {
+                feedbackElement.classList.add('incorrect-answer');
+                inputElement.classList.add('incorrect-answer');
+                feedbackElement.innerHTML = `<span class="font-bold text-red-800">Incorreto.</span> Uma resposta esperada era: <span class="font-mono font-bold">${phrase.exerciseCorrectAnswer[0]}</span>`;
+            }
+        }
+
+        // ====================================================================================================
+        // EXERCÍCIOS FINAIS
+        // ====================================================================================================
+
+        // Dados para o exercício de Correspondência
+        const matchingData = phrasesData.filter(p => !p.isExerciseTab).map(p => ({
+            french: p.writing, // Usar a escrita padrão para o matching
+            portuguese: p.translation
+        }));
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function renderMatchingExercise() {
+            const shuffledFrench = shuffleArray(matchingData.map(item => item.french));
+            const shuffledPortuguese = shuffleArray(matchingData.map(item => item.portuguese));
+
+            let html = `
+                <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200 border border-slate-100">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4">Exercício de Correspondência</h3>
+                    <p class="text-slate-600 mb-6">Arraste as expressões em francês para suas traduções corretas em português.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div id="matching-sources" class="matching-source-container">
+                            ${shuffledFrench.map((french, index) => `<div class="matching-source-item" draggable="true" id="source-${index}" data-french="${french}">${french}</div>`).join('')}
+                        </div>
+                        <div id="matching-targets">
+                            ${shuffledPortuguese.map((portuguese, index) => `<div class="matching-target" id="target-${index}" data-portuguese="${portuguese}">Arrastar aqui</div>`).join('')}
+                        </div>
+                    </div>
+                    <button onclick="checkMatchingExercise()" class="mt-8 px-6 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Verificar Correspondência</button>
+                    <button onclick="resetMatchingExercise()" class="mt-8 ml-4 px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors">Reiniciar</button>
+                    <div id="matching-feedback" class="mt-4 p-3 rounded-lg border-2 hidden"></div>
+                </div>
+            `;
+            return html;
+        }
+
+        let draggedItem = null;
+
+        function initializeMatchingExercise() {
+            const sources = document.querySelectorAll('.matching-source-item');
+            const targets = document.querySelectorAll('.matching-target');
+
+            sources.forEach(source => {
+                source.addEventListener('dragstart', (e) => {
+                    draggedItem = source;
+                    e.dataTransfer.setData('text/plain', source.dataset.french);
+                    source.classList.add('dragging');
+                });
+                source.addEventListener('dragend', () => {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                });
+            });
+
+            targets.forEach(target => {
+                target.addEventListener('dragover', (e) => {
+                    e.preventDefault(); // Permite o drop
+                    target.classList.add('border-blue-500'); // Feedback visual
+                });
+                target.addEventListener('dragleave', (e) => {
+                    target.classList.remove('border-blue-500');
+                });
+                target.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    target.classList.remove('border-blue-500');
+
+                    if (draggedItem && !target.querySelector('.matching-dropped-item')) { // Só permite drop se o target estiver vazio
+                        target.innerHTML = ''; // Limpa o texto "Arrastar aqui"
+                        target.appendChild(draggedItem);
+                        draggedItem.style.position = 'static'; // Remove qualquer posicionamento de arrasto
+                        draggedItem.style.margin = '0'; // Remove margens extras
+                        draggedItem.classList.remove('matching-source-item'); // Remove estilo de item de origem
+                        draggedItem.classList.add('matching-dropped-item'); // Adiciona estilo de item dropado
+                        target.classList.add('has-item');
+                    }
+                });
+            });
+        }
+
+        function checkMatchingExercise() {
+            const targets = document.querySelectorAll('.matching-target');
+            let allCorrect = true;
+            let correctCount = 0;
+
+            targets.forEach(target => {
+                target.classList.remove('correct', 'incorrect');
+                const droppedItem = target.querySelector('.matching-dropped-item');
+                if (droppedItem) {
+                    const frenchText = droppedItem.dataset.french;
+                    const portugueseText = target.dataset.portuguese;
+
+                    const correspondingPhrase = matchingData.find(item => item.french === frenchText);
+
+                    if (correspondingPhrase && correspondingPhrase.portuguese === portugueseText) {
+                        target.classList.add('correct');
+                        correctCount++;
+                    } else {
+                        target.classList.add('incorrect');
+                        allCorrect = false;
+                    }
+                } else {
+                    allCorrect = false; // Se um target estiver vazio, não está completo
+                }
+            });
+
+            const feedbackElement = document.getElementById('matching-feedback');
+            feedbackElement.classList.remove('hidden', 'correct-answer', 'incorrect-answer');
+
+            if (allCorrect && correctCount === matchingData.length) {
+                feedbackElement.classList.add('correct-answer');
+                feedbackElement.innerHTML = '<span class="font-bold text-green-800">Parabéns!</span> Todas as correspondências estão corretas!';
+            } else {
+                feedbackElement.classList.add('incorrect-answer');
+                feedbackElement.innerHTML = `<span class="font-bold text-red-800">Quase lá!</span> Você acertou ${correctCount} de ${matchingData.length}. Revise e tente novamente.`;
+            }
+        }
+
+        function resetMatchingExercise() {
+            const sourcesContainer = document.getElementById('matching-sources');
+            const targetsContainer = document.getElementById('matching-targets');
+            const feedbackElement = document.getElementById('matching-feedback');
+
+            // Limpa feedback
+            feedbackElement.classList.add('hidden');
+            feedbackElement.innerHTML = '';
+
+            // Move todos os itens de volta para as fontes
+            targetsContainer.querySelectorAll('.matching-target').forEach(target => {
+                const droppedItem = target.querySelector('.matching-dropped-item');
+                if (droppedItem) {
+                    droppedItem.classList.remove('matching-dropped-item');
+                    droppedItem.classList.add('matching-source-item');
+                    sourcesContainer.appendChild(droppedItem);
+                }
+                target.innerHTML = 'Arrastar aqui'; // Restaura o texto padrão
+                target.classList.remove('has-item', 'correct', 'incorrect');
+            });
+
+            // Re-renderiza para embaralhar as fontes novamente
+            sourcesContainer.innerHTML = ''; // Limpa o container de fontes
+            const shuffledFrench = shuffleArray(matchingData.map(item => item.french));
+            sourcesContainer.innerHTML = shuffledFrench.map((french, index) => `<div class="matching-source-item" draggable="true" id="source-${index}" data-french="${french}">${french}</div>`).join('');
+
+            initializeMatchingExercise(); // Re-inicializa os listeners de drag/drop
+        }
+
+        // Dados para o exercício de Tradução
+        const translationData = phrasesData.filter(p => !p.isExerciseTab).map(p => ({
+            portuguese: p.translation,
+            french: p.exerciseCorrectAnswer // Usar as respostas corretas do exercício individual
+        }));
+
+        let currentTranslationIndex = 0;
+        let shuffledTranslationData = [];
+
+        function renderTranslationExercise() {
+            let html = `
+                <div class="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200 border border-slate-100">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4">Exercício de Tradução (Português para Francês)</h3>
+                    <p class="text-slate-600 mb-6">Traduza a frase abaixo para o francês.</p>
+                    <div id="translation-question" class="text-xl font-bold text-slate-800 mb-4"></div>
+                    <input type="text" id="translation-input" class="w-full p-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 mb-4 text-slate-800" placeholder="Sua tradução em francês...">
+                    <button onclick="checkTranslationAnswer()" class="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-colors">Verificar Tradução</button>
+                    <button onclick="nextTranslationQuestion()" class="ml-4 px-6 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors">Próxima Frase</button>
+                    <div id="translation-feedback" class="mt-4 p-3 rounded-lg border-2 hidden"></div>
+                </div>
+            `;
+            return html;
+        }
+
+        function initializeTranslationExercise() {
+            shuffledTranslationData = shuffleArray([...translationData]); // Cria uma cópia e embaralha
+            currentTranslationIndex = 0;
+            displayTranslationQuestion();
+        }
+
+        function displayTranslationQuestion() {
+            const questionElement = document.getElementById('translation-question');
+            const inputElement = document.getElementById('translation-input');
+            const feedbackElement = document.getElementById('translation-feedback');
+
+            if (shuffledTranslationData.length === 0) {
+                questionElement.innerText = "Nenhuma frase para traduzir.";
+                inputElement.disabled = true;
+                return;
+            }
+
+            const currentPhrase = shuffledTranslationData[currentTranslationIndex];
+            questionElement.innerText = currentPhrase.portuguese;
+            inputElement.value = '';
+            inputElement.classList.remove('correct-answer', 'incorrect-answer');
+            feedbackElement.classList.add('hidden');
+            feedbackElement.innerHTML = '';
+            inputElement.disabled = false;
+        }
+
+        function checkTranslationAnswer() {
+            const inputElement = document.getElementById('translation-input');
+            const feedbackElement = document.getElementById('translation-feedback');
+
+            if (!inputElement || !feedbackElement || shuffledTranslationData.length === 0) return;
+
+            const userAnswer = inputElement.value.trim().toLowerCase();
+            const currentPhrase = shuffledTranslationData[currentTranslationIndex];
+            const correctAnswers = currentPhrase.french.map(ans => ans.toLowerCase());
+
+            feedbackElement.classList.remove('hidden', 'correct-answer', 'incorrect-answer');
+            inputElement.classList.remove('correct-answer', 'incorrect-answer');
+
+            if (correctAnswers.includes(userAnswer)) {
+                feedbackElement.classList.add('correct-answer');
+                inputElement.classList.add('correct-answer');
+                feedbackElement.innerHTML = '<span class="font-bold text-green-800">Correto!</span> Muito bem!';
+            } else {
+                feedbackElement.classList.add('incorrect-answer');
+                inputElement.classList.add('incorrect-answer');
+                feedbackElement.innerHTML = `<span class="font-bold text-red-800">Incorreto.</span> Uma resposta esperada era: <span class="font-mono font-bold">${currentPhrase.french[0]}</span>`;
+            }
+        }
+
+        function nextTranslationQuestion() {
+            currentTranslationIndex = (currentTranslationIndex + 1) % shuffledTranslationData.length;
+            displayTranslationQuestion();
+        }
+
+        // Inicialização
+        window.onload = () => {
+            renderTabs();
+            renderContent();
+        };
+    </script>
+</body>
+</html>
